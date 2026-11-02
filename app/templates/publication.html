@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <p class="crumb"><a href="/publications">Публикации</a></p>
+    <h1>{{ item.title }}</h1>
+    <p class="lead">{{ item.source.name }} · {{ item.published_at | date }}</p>
+  </div>
+</header>
+{% if item.is_synthetic %}
+<div class="notice notice-info">Синтетическая тестовая публикация: издание, персоны и события вымышлены.</div>
+{% endif %}
+<section class="grid grid-article">
+  <article class="card article">
+    {% for paragraph in item.text.split('\n') if paragraph.strip() %}<p>{{ paragraph }}</p>{% endfor %}
+    {% if not item.is_synthetic %}<p><a href="{{ item.url }}" target="_blank" rel="noopener">Открыть оригинал</a></p>{% endif %}
+  </article>
+  <aside class="card">
+    <h2>Разметка</h2>
+    <dl class="legend-list">
+      <div><dt>Тема</dt><dd>{{ TOPIC_NAMES.get(item.topic, item.topic) }}</dd></div>
+      <div><dt>Общая тональность</dt><dd><span class="tone tone-{{ item.tone }}">{{ SENTIMENT_LABELS[item.tone] }}</span></dd></div>
+      <div><dt>Уровень источника</dt><dd>{{ LEVEL_LABELS.get(item.source.level, item.source.level) }}</dd></div>
+    </dl>
+    <h3>Объекты мониторинга</h3>
+    <ul class="rank">{% for entry in objects %}<li><span>{{ entry.name }}</span></li>{% endfor %}</ul>
+    {% for kind, label in ENTITY_LABELS.items() %}
+    {% set found = item.entities | selectattr('type', 'equalto', kind) | list %}
+    {% if found %}
+    <h3>{{ label }}</h3>
+    <ul class="rank">{% for entity in found %}<li><span>{{ entity.name }}</span><b>{{ entity.count }}</b></li>{% endfor %}</ul>
+    {% endif %}
+    {% endfor %}
+  </aside>
+</section>
+{% endblock %}

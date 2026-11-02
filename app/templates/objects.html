@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Объекты мониторинга · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Объекты мониторинга</h1>
+    <p class="lead">Названия ищутся во всех падежах. Новый объект сразу находится в уже собранных публикациях.</p>
+  </div>
+</header>
+
+<section class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Объект</th><th>Тип</th><th>Названия</th><th>Слабые названия</th><th class="num">Публикаций</th></tr></thead>
+      <tbody>
+        {% for item, count in rows %}
+        <tr>
+          <td><strong>{{ item.name }}</strong>{% if item.note %}<div class="muted">{{ item.note }}</div>{% endif %}</td>
+          <td>{{ item.kind }}</td>
+          <td>{{ item.aliases | join(', ') }}</td>
+          <td>{{ item.weak_aliases | join(', ') or '—' }}</td>
+          <td class="num">{{ count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Добавить объект</h2>
+  <form method="post" action="/objects" class="stack-small">
+    <div class="field-row">
+      <div>
+        <label class="field-label" for="name">Название</label>
+        <input id="name" name="name" required>
+      </div>
+      <div>
+        <label class="field-label" for="kind">Тип</label>
+        <select id="kind" name="kind">
+          <option>Организация</option><option>Персона</option><option>Подразделение</option><option>Проект</option>
+        </select>
+      </div>
+    </div>
+    <label class="field-label" for="aliases">Однозначные названия через запятую</label>
+    <input id="aliases" name="aliases" required placeholder="ТюмГУ, Тюменский государственный университет">
+    <label class="field-label" for="weak_aliases">Слабые названия, которые могут относиться к другим организациям</label>
+    <input id="weak_aliases" name="weak_aliases" placeholder="тюменский вуз">
+    <label class="field-label" for="other_organizations">Похожие организации, с которыми объект нельзя путать</label>
+    <input id="other_organizations" name="other_organizations" placeholder="ТИУ, Томский университет">
+    <div><button class="button" data-busy="Индексируем публикации…">Добавить объект</button></div>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/form.js"></script>{% endblock %}

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.claude/
+
+# Рабочие базы создаются при запуске
+data/*.db
+data/*.db-journal

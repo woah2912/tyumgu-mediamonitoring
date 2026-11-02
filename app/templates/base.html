@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Медиамониторинг ТюмГУ{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">М</span>
+      <span class="brand-text">Медиамониторинг<small>ТюмГУ</small></span>
+    </a>
+    <nav>
+      <p class="nav-group">Сотрудник УСК</p>
+      <a href="/" class="{{ 'active' if active == 'new' }}">Новый отчёт</a>
+      <a href="/reports" class="{{ 'active' if active == 'reports' }}">Архив отчётов</a>
+      <p class="nav-group">Руководство</p>
+      <a href="/review" class="{{ 'active' if active == 'review' }}">Анализ отчётов</a>
+      <p class="nav-group">Данные</p>
+      <a href="/publications" class="{{ 'active' if active == 'publications' }}">Публикации</a>
+      <a href="/sources" class="{{ 'active' if active == 'sources' }}">Источники и сбор</a>
+      <a href="/objects" class="{{ 'active' if active == 'objects' }}">Объекты мониторинга</a>
+      <p class="nav-group">О системе</p>
+      <a href="/method" class="{{ 'active' if active == 'method' }}">Методика</a>
+    </nav>
+  </aside>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

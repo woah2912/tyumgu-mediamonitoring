@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Публикации · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>База публикаций</h1>
+    <p class="lead">Собранные материалы с упоминаниями объектов мониторинга. Всего по фильтрам: {{ total }}.</p>
+  </div>
+</header>
+
+<form class="filters" method="get" action="/publications">
+  <input type="search" name="q" value="{{ q }}" placeholder="Поиск по тексту" aria-label="Поиск">
+  <select name="object_id" aria-label="Объект">
+    <option value="">Все объекты</option>
+    {% for item in objects %}<option value="{{ item.id }}" {{ 'selected' if object_id == item.id }}>{{ item.name }}</option>{% endfor %}
+  </select>
+  <select name="topic" aria-label="Тема">
+    <option value="">Все темы</option>
+    {% for code, name in TOPIC_NAMES.items() %}<option value="{{ code }}" {{ 'selected' if topic == code }}>{{ name }}</option>{% endfor %}
+  </select>
+  <select name="tone" aria-label="Тональность">
+    <option value="">Любая тональность</option>
+    {% for key, label in SENTIMENT_LABELS.items() %}<option value="{{ key }}" {{ 'selected' if tone == key }}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="source" aria-label="Источник">
+    <option value="">Все источники</option>
+    {% for item in sources %}<option value="{{ item.id }}" {{ 'selected' if source == item.id }}>{{ item.name }}</option>{% endfor %}
+  </select>
+  <button class="button">Применить</button>
+</form>
+
+<section class="card">
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Дата</th><th>Публикация</th><th>Тема</th><th>Тональность</th></tr></thead>
+      <tbody>
+        {% for item in rows %}
+        <tr>
+          <td class="nowrap">{{ item.published_at | date }}</td>
+          <td>
+            <a class="strong-link" href="/publications/{{ item.id }}">{{ item.title }}</a>
+            <div class="muted">{{ item.source.name }}{% if item.is_synthetic %} <em class="tag">тест</em>{% endif %}</div>
+          </td>
+          <td>{{ TOPIC_NAMES.get(item.topic, item.topic) }}</td>
+          <td class="nowrap"><span class="tone tone-{{ item.tone }}">{{ SENTIMENT_LABELS[item.tone] }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <nav class="pager">
+    {% for number in range(1, pages + 1) %}
+    <a class="pager-item {{ 'active' if number == page }}" href="?q={{ q | urlencode }}&topic={{ topic }}&tone={{ tone }}&source={{ source or '' }}&object_id={{ object_id or '' }}&page={{ number }}">{{ number }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty-state"><h2>Ничего не найдено</h2><p>Измените условия поиска.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+<details class="card process" {{ 'open' if report.status in ['processing', 'failed'] }}>
+  <summary>
+    <span class="process-title">Ход процесса по BPMN</span>
+    <span class="process-count" id="process-count"></span>
+  </summary>
+  <div class="lanes" id="process-steps">
+    {% for lane, title in [('system', 'Система'), ('employee', 'Сотрудник'), ('management', 'Руководство')] %}
+    <div class="lane">
+      <span class="lane-title">{{ title }}</span>
+      <ol class="steps">
+        {% for step in report.steps if step.lane == lane %}
+        <li class="step step-{{ step.status }}" data-code="{{ step.code }}" title="{{ step.detail }}">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-body"><span class="step-title">{{ step.title }}</span><span class="step-detail">{{ step.detail }}</span></span>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endfor %}
+  </div>
+</details>

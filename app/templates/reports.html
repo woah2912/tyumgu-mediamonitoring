@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Архив отчётов · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Архив отчётов</h1>
+    <p class="lead">Все отчёты хранятся в отдельной базе вместе со снимком выборки и документами.</p>
+  </div>
+  <a class="button button-primary" href="/">Новый отчёт</a>
+</header>
+
+<div class="chips">
+  <a class="chip {{ 'active' if not status }}" href="/reports">Все</a>
+  {% for code, label in STATUS_LABELS.items() if code != 'failed' %}
+  <a class="chip {{ 'active' if status == code }}" href="/reports?status={{ code }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<section class="card">
+  {% if reports %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>№</th><th>Объект и контекст</th><th>Период</th><th class="num">Публикаций</th><th class="num">Индекс тональности</th><th>Статус</th><th>Создан</th></tr></thead>
+      <tbody>
+        {% for report in reports %}
+        <tr>
+          <td>{{ report.id }}</td>
+          <td><a class="strong-link" href="/reports/{{ report.id }}">{{ report.object_name }}</a><div class="muted">{{ report.context_name }}</div></td>
+          <td class="nowrap">{{ report.date_from | date }} – {{ report.date_to | date }}</td>
+          <td class="num">{{ report.metrics.get('kept', '—') }}</td>
+          <td class="num">{% if report.metrics %}{{ '%+.1f' % report.metrics.tone_index }}{% else %}—{% endif %}</td>
+          <td><span class="status status-{{ report.status }}">{{ STATUS_LABELS[report.status] }}</span></td>
+          <td class="nowrap">{{ report.created_at | datetime }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>Отчётов пока нет</h2>
+    <p>Сформируйте первый отчёт, и он появится здесь.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

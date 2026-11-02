@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Новый отчёт · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Новый отчёт</h1>
+    <p class="lead">Задайте параметры запроса. Обработку и очистку выборки система выполнит сама.</p>
+  </div>
+</header>
+
+{% if message %}<div class="notice notice-warning" role="alert">{{ message }}</div>{% endif %}
+{% for warning in warnings or [] %}<div class="notice notice-warning">{{ warning }}</div>{% endfor %}
+
+{% set form = submitted or {} %}
+<form method="post" action="/reports" id="report-form" class="stack">
+  <section class="card form-step">
+    <span class="step-number">1</span>
+    <div class="form-step-body">
+      <label class="field-title" for="object_id">Объект мониторинга</label>
+      <select id="object_id" name="object_id" required>
+        {% for item in objects %}
+        <option value="{{ item.id }}" {{ 'selected' if form.get('object_id') == item.id }}>{{ item.name }} — {{ item.kind | lower }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </section>
+
+  <section class="card form-step">
+    <span class="step-number">2</span>
+    <div class="form-step-body">
+      <label class="field-title" for="context_code">Контекст мониторинга</label>
+      <select id="context_code" name="context_code">
+        {% for code, name in contexts.items() %}
+        <option value="{{ code }}" {{ 'selected' if form.get('context_code') == code }}>{{ name }}</option>
+        {% endfor %}
+      </select>
+      <label class="field-label" for="context_keywords">Ключевые слова контекста, если нужно уточнить</label>
+      <input id="context_keywords" name="context_keywords" value="{{ form.get('context_keywords', '') }}" placeholder="например: общежитие, стипендия">
+    </div>
+  </section>
+
+  <section class="card form-step">
+    <span class="step-number">3</span>
+    <div class="form-step-body">
+      <span class="field-title">Временной период</span>
+      <div class="chips" data-presets data-today="{{ today }}">
+        <button type="button" class="chip" data-days="7">7 дней</button>
+        <button type="button" class="chip" data-days="30">30 дней</button>
+        <button type="button" class="chip" data-days="90">90 дней</button>
+        <button type="button" class="chip" data-days="365">Год</button>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label" for="date_from">С</label>
+          <input type="date" id="date_from" name="date_from" value="{{ form.get('date_from', default_from) }}" required>
+        </div>
+        <div>
+          <label class="field-label" for="date_to">По</label>
+          <input type="date" id="date_to" name="date_to" value="{{ form.get('date_to', default_to) }}" required>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card form-step">
+    <span class="step-number">4</span>
+    <div class="form-step-body">
+      <div class="field-head">
+        <span class="field-title">Источники</span>
+        <button type="button" class="link-button" data-toggle-sources>Снять все</button>
+      </div>
+      {% for title, items in groups if items %}
+      <fieldset class="source-group">
+        <legend>{{ title }} уровень</legend>
+        <div class="source-grid">
+          {% for source in items %}
+          <label class="check">
+            <input type="checkbox" name="source_ids" value="{{ source.id }}" {{ 'checked' if not form or source.id in form.get('source_ids', []) }}>
+            <span>{{ source.name }}{% if source.is_synthetic %} <em class="tag">тест</em>{% endif %}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endfor %}
+      <label class="field-label" for="custom_sources">Свои источники: адрес сайта или RSS-ленты, по одному в строке</label>
+      <textarea id="custom_sources" name="custom_sources" rows="2" placeholder="https://example.ru/rss">{{ form.get('custom_sources', '') }}</textarea>
+      <p class="hint">Система сразу соберёт из них публикации с упоминанием объектов мониторинга и включит источник в запрос.</p>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="button button-primary" type="submit" data-busy="Обрабатываем публикации…">Сформировать отчёт</button>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="/static/js/form.js"></script>{% endblock %}

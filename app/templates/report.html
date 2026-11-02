@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Отчёт № {{ report.id }} · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+{% set data = report.metrics %}
+<div data-report="{{ report.id }}" data-status="{{ report.status }}">
+  <header class="page-head">
+    <div>
+      <p class="crumb"><a href="/reports">Архив отчётов</a> / № {{ report.id }}</p>
+      <h1>{{ report.object_name }}</h1>
+      <p class="lead">{{ report.context_name }}{% if report.context_keywords %}: {{ report.context_keywords }}{% endif %} · {{ report.date_from | date }} – {{ report.date_to | date }}</p>
+    </div>
+    <div class="head-actions">
+      <span class="status status-{{ report.status }}">{{ STATUS_LABELS[report.status] }}</span>
+      {% if report.status in ['ready', 'exported', 'closed'] %}
+      <form method="post" action="/reports/{{ report.id }}/export">
+        <button class="button button-primary" data-busy="Формируем документ…">{{ 'Экспортировать отчёт' if report.status == 'ready' else 'Экспортировать заново' }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if report.has_synthetic %}
+  <div class="notice notice-info">В выборке есть синтетические тестовые публикации: издания, персоны и события вымышлены.</div>
+  {% endif %}
+  {% if report.status == 'failed' %}
+  <div class="notice notice-error" role="alert">Обработка завершилась ошибкой: {{ report.error }}</div>
+  {% endif %}
+
+  {% include "_process.html" %}
+
+  {% if report.status == 'processing' %}
+  <section class="card empty-state">
+    <h2>Идёт очистка выборки</h2>
+    <p>Система проверяет релевантность, удаляет дубликаты и случайные публикации. Страница обновится сама.</p>
+  </section>
+  {% elif data %}
+
+  <section class="tiles" aria-label="Ключевые показатели">
+    <div class="tile">
+      <span class="tile-label">Публикаций в отчёте</span>
+      <strong class="tile-value">{{ data.kept }}</strong>
+      <span class="tile-note">из {{ data.found }} найденных</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Индекс тональности</span>
+      <strong class="tile-value">{{ '%+.1f' % data.tone_index }}</strong>
+      <span class="tile-note">от −100 до +100</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Медиаиндекс</span>
+      <strong class="tile-value">{{ '%.1f' % data.media_index }}</strong>
+      <span class="tile-note">авторитет × роль × тональность</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Главная роль</span>
+      <strong class="tile-value">{{ '%.0f' % data.main_role_share }}%</strong>
+      <span class="tile-note">публикаций об объекте</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Влиятельный негатив</span>
+      <strong class="tile-value">{{ data.influential }}</strong>
+      <span class="tile-note">из {{ data.negative }} негативных</span>
+    </div>
+  </section>
+
+  <section class="grid grid-summary">
+    <div class="card">
+      <h2>Выводы</h2>
+      <ul class="conclusions">{% for line in conclusions %}<li>{{ line }}</li>{% endfor %}</ul>
+    </div>
+    <div class="card">
+      <h2>Тональность</h2>
+      {% set total = data.kept or 1 %}
+      <div class="share-bar" role="img" aria-label="Позитив {{ data.sentiment.positive }}, нейтрально {{ data.sentiment.neutral }}, негатив {{ data.sentiment.negative }}">
+        {% for key in ['positive', 'neutral', 'negative'] %}
+        {% if data.sentiment[key] %}<span class="tone-fill-{{ key }}" style="flex: {{ data.sentiment[key] }}"></span>{% endif %}
+        {% endfor %}
+      </div>
+      <dl class="legend-list">
+        {% for key, label in SENTIMENT_LABELS.items() %}
+        <div><dt><span class="dot tone-fill-{{ key }}"></span>{{ label }}</dt><dd>{{ data.sentiment[key] }} · {{ '%.0f' % (data.sentiment[key] / total * 100) }}%</dd></div>
+        {% endfor %}
+      </dl>
+      <h3>Очистка выборки</h3>
+      <dl class="legend-list">
+        <div><dt>Удалено дубликатов</dt><dd>{{ data.removed_duplicates }}</dd></div>
+        <div><dt>Удалено случайных</dt><dd>{{ data.removed_random }}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Динамика упоминаний {{ 'по неделям' if data.timeline.step == 'week' else 'по дням' }}</h2>
+    <div class="chart" style="height: 280px"><canvas id="timeline-chart"></canvas></div>
+    <details class="table-view">
+      <summary>Показать таблицей</summary>
+      <table class="data-table compact">
+        <thead><tr><th>Дата</th>{% for label in SENTIMENT_LABELS.values() %}<th class="num">{{ label }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for point in data.timeline.points %}<tr><td>{{ point.label }}</td>{% for key in SENTIMENT_LABELS %}<td class="num">{{ point[key] }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+    </details>
+  </section>
+
+  <section class="grid grid-two">
+    <div class="card">
+      <h2>Темы публикаций</h2>
+      <div class="chart" style="height: {{ 90 + 34 * data.topics | length }}px"><canvas id="topics-chart"></canvas></div>
+      <details class="table-view">
+        <summary>Показать таблицей</summary>
+        <table class="data-table compact">
+          <thead><tr><th>Тема</th>{% for label in SENTIMENT_LABELS.values() %}<th class="num">{{ label }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in data.topics %}<tr><td>{{ row.name }}</td>{% for key in SENTIMENT_LABELS %}<td class="num">{{ row[key] }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </details>
+    </div>
+    <div class="card">
+      <h2>Источники</h2>
+      <div class="chart" style="height: {{ 90 + 34 * data.sources | length }}px"><canvas id="sources-chart"></canvas></div>
+      <details class="table-view">
+        <summary>Показать таблицей</summary>
+        <table class="data-table compact">
+          <thead><tr><th>Источник</th>{% for label in SENTIMENT_LABELS.values() %}<th class="num">{{ label }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in data.sources %}<tr><td>{{ row.name }}</td>{% for key in SENTIMENT_LABELS %}<td class="num">{{ row[key] }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </details>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Тематические кластеры</h2>
+    <p class="hint">Система сгруппировала публикации без заранее заданных тем и подобрала ключевые слова.</p>
+    <div class="cluster-grid">
+      {% for cluster in report.clusters %}
+      <article class="cluster">
+        <header><strong>{{ cluster.name }}</strong><span>{{ cluster.size }}</span></header>
+        <p class="cluster-terms">{{ cluster.terms | join(', ') }}</p>
+        <p class="cluster-example">{{ cluster.example }}</p>
+        {% if cluster.negative %}<p class="cluster-risk">Негативных: {{ cluster.negative }}</p>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="grid grid-three">
+    <div class="card">
+      <h2>Роль объекта</h2>
+      <ul class="rank">{% for row in data.roles %}<li><span>{{ row.name }}</span><b>{{ row.count }}</b></li>{% endfor %}</ul>
+      <h3>Уровень источника</h3>
+      <ul class="rank">{% for row in data.levels %}<li><span>{{ row.name }}</span><b>{{ row.count }}</b></li>{% endfor %}</ul>
+    </div>
+    <div class="card">
+      <h2>Главные объекты</h2>
+      <ul class="rank">{% for row in data.main_entities[:8] %}<li><span>{{ row.name }}</span><b>{{ row.count }}</b></li>{% endfor %}</ul>
+    </div>
+    <div class="card">
+      <h2>Именованные сущности</h2>
+      {% for kind, label in ENTITY_LABELS.items() if data.entities.get(kind) %}
+      <h3>{{ label }}</h3>
+      <ul class="rank">{% for row in data.entities[kind][:4] %}<li><span>{{ row.name }}</span><b>{{ row.count }}</b></li>{% endfor %}</ul>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card" id="publications">
+    <div class="tabs" role="tablist">
+      <button role="tab" class="tab active" data-tab="relevant">Публикации в отчёте <span>{{ data.kept }}</span></button>
+      <button role="tab" class="tab" data-tab="removed">Удалённые системой <span>{{ data.removed_duplicates + data.removed_random }}</span></button>
+    </div>
+    <div class="filters">
+      <input type="search" id="filter-search" placeholder="Поиск по заголовку и источнику" aria-label="Поиск">
+      <select id="filter-tone" aria-label="Тональность">
+        <option value="">Любая тональность</option>
+        {% for key, label in SENTIMENT_LABELS.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+      </select>
+      <select id="filter-topic" aria-label="Тема">
+        <option value="">Все темы</option>
+        {% for row in data.topics %}<option>{{ row.name }}</option>{% endfor %}
+      </select>
+      <select id="filter-role" aria-label="Роль">
+        <option value="">Любая роль</option>
+        {% for label in ROLE_LABELS.values() %}<option>{{ label }}</option>{% endfor %}
+      </select>
+      <select id="filter-level" aria-label="Уровень источника">
+        <option value="">Любой уровень</option>
+        {% for label in LEVEL_LABELS.values() %}<option>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="table-wrap"><table class="data-table" id="publications-table"></table></div>
+    <div class="pager" id="publications-pager"></div>
+  </section>
+
+  <section class="card" id="documents">
+    <h2>Документы отчёта</h2>
+    {% if documents %}
+    <p class="hint">Файлы хранятся в базе отчётов, экспорт от {{ report.exported_at | datetime }}.</p>
+    <div class="documents">
+      {% for document in documents %}
+      <a class="document" href="/reports/{{ report.id }}/documents/{{ document.id }}">
+        <span class="document-format">{{ document.format | upper }}</span>
+        <span class="document-name">{{ document.filename }}</span>
+        <span class="document-size">{{ document.size | filesize }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% if report.status in ['exported', 'closed'] %}
+    <p class="after-documents"><a class="button" href="/reports/{{ report.id }}/review">Открыть анализ руководства</a></p>
+    {% endif %}
+    {% else %}
+    <p class="hint">Документы появятся после команды «Экспортировать отчёт».</p>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% if data %}<script type="application/json" id="report-data">{{ payload | safe }}</script>{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/chart.umd.js"></script>
+<script src="/static/js/report.js"></script>
+<script src="/static/js/form.js"></script>
+{% endblock %}

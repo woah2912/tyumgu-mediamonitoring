@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Источники и сбор · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Источники и сбор</h1>
+    <p class="lead">Модуль сбора забирает новые материалы из лент и сохраняет те, где упомянут объект мониторинга.</p>
+  </div>
+  <form method="post" action="/sources/collect">
+    <button class="button button-primary" {{ 'disabled' if running }}>{{ 'Сбор идёт…' if running else 'Запустить сбор' }}</button>
+  </form>
+</header>
+
+{% if error %}<div class="notice notice-error" role="alert">{{ error }}</div>{% endif %}
+
+<section class="card">
+  <h2>Добавить источник</h2>
+  <form method="post" action="/sources" class="inline-form">
+    <div>
+      <label class="field-label" for="url">Адрес сайта или RSS-ленты</label>
+      <input id="url" name="url" type="url" required placeholder="https://example.ru/rss">
+    </div>
+    <div>
+      <label class="field-label" for="name">Название</label>
+      <input id="name" name="name" placeholder="Необязательно">
+    </div>
+    <button class="button" data-busy="Проверяем…">Добавить</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Источник</th><th>Тип</th><th>Уровень</th><th class="num">Авторитет</th><th class="num">Публикаций</th><th>Последний сбор</th><th></th></tr></thead>
+      <tbody>
+        {% for source, count in rows %}
+        <tr class="{{ 'row-muted' if not source.is_active }}">
+          <td>
+            <strong>{{ source.name }}</strong>{% if source.is_synthetic %} <em class="tag">тест</em>{% endif %}{% if source.is_custom %} <em class="tag">свой</em>{% endif %}
+          </td>
+          <td>{{ source.media_type }}</td>
+          <td>{{ LEVEL_LABELS.get(source.level, source.level) }}</td>
+          <td class="num">{{ '%.1f' % source.authority }}</td>
+          <td class="num">{{ count }}</td>
+          <td>{% if source.feed_url %}{{ source.last_collected_at | datetime }}<div class="muted">{{ source.last_status or 'Сбор ещё не запускался' }}</div>{% elif source.parent_id %}<span class="muted">Найдено через агрегатор</span>{% else %}<span class="muted">Загружен из тестового набора</span>{% endif %}</td>
+          <td>
+            {% if not source.parent_id %}
+            <form method="post" action="/sources/{{ source.id }}/toggle">
+              <button class="link-button">{{ 'Отключить' if source.is_active else 'Включить' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% if runs %}
+<section class="card">
+  <h2>Журнал сбора</h2>
+  <div class="table-wrap">
+    <table class="data-table compact">
+      <thead><tr><th>Начало</th><th>Запуск</th><th class="num">Источников</th><th class="num">Просмотрено</th><th class="num">Добавлено</th><th class="num">Ошибок</th></tr></thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td>{{ run.started_at | datetime }}</td>
+          <td>{{ 'По расписанию' if run.trigger == 'schedule' else 'Вручную' }}{% if not run.finished_at %} · идёт{% endif %}</td>
+          <td class="num">{{ run.sources_total }}</td>
+          <td class="num">{{ run.items_seen }}</td>
+          <td class="num">{{ run.items_added }}</td>
+          <td class="num">{{ run.errors | length }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/js/form.js"></script>{% endblock %}
