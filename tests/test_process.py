@@ -234,6 +234,11 @@ def test_menu_has_no_removed_sections(client):
     assert "Анализ отчётов" not in page and "Методика" not in page
 
 
+def test_report_page_has_no_bpmn_tracker(client, report_id):
+    page = client.get(f"/reports/{report_id}").text
+    assert "Ход процесса" not in page and "BPMN" not in page
+
+
 def test_report_steps_cover_employee_and_system_lanes_only(report_id):
     with reports_session() as session:
         lanes = {step["lane"] for step in session.get(Report, report_id).steps}

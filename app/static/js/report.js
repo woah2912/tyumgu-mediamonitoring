@@ -1,4 +1,4 @@
-// Страница отчёта: ход обработки, графики и таблица публикаций.
+// Страница отчёта: ожидание обработки, графики и таблица публикаций.
 (function () {
   const root = document.querySelector("[data-report]");
   if (!root) return;
@@ -12,28 +12,10 @@
   const GRID = "#e1e0d9";
   const INK = "#52514e";
 
-  function updateCounter(steps) {
-    const counter = document.getElementById("process-count");
-    if (!counter) return;
-    const done = steps.filter((step) => step.status !== "pending").length;
-    counter.textContent = `${done} из ${steps.length}`;
-  }
-
-  function renderSteps(steps) {
-    steps.forEach((step) => {
-      const node = document.querySelector(`[data-code="${step.code}"]`);
-      if (!node) return;
-      node.className = `step step-${step.status}`;
-      node.title = step.detail;
-      node.querySelector(".step-detail").textContent = step.detail;
-    });
-    updateCounter(steps);
-  }
-
+  // Пока система очищает выборку, ждём готовности и обновляем страницу.
   async function poll() {
     const response = await fetch(`/api/reports/${reportId}/status`);
     const data = await response.json();
-    renderSteps(data.steps);
     if (data.status !== "processing") {
       window.location.reload();
       return;
@@ -41,11 +23,7 @@
     setTimeout(poll, POLL_MS);
   }
 
-  if (root.dataset.status === "processing") {
-    poll();
-  } else {
-    fetch(`/api/reports/${reportId}/status`).then((r) => r.json()).then((data) => updateCounter(data.steps));
-  }
+  if (root.dataset.status === "processing") poll();
 
   const payload = document.getElementById("report-data");
   if (!payload) return;

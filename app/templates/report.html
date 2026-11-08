@@ -26,8 +26,6 @@
   <div class="notice notice-error" role="alert">Обработка завершилась ошибкой: {{ report.error }}</div>
   {% endif %}
 
-  {% include "_process.html" %}
-
   {% if report.status == 'processing' %}
   <section class="card empty-state">
     <h2>Идёт очистка выборки</h2>

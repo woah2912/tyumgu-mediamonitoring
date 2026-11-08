@@ -263,7 +263,7 @@ def sequence_report() -> None:
     s.message("pipeline", "repdb", y - 750, "кластеры, метрики, статус «готов»")
     s.fragment(180, 600, y - 780, y - 885, "loop", "пока статус «обрабатывается»")
     s.message("web", "pages", y - 832, "GET /api/reports/{id}/status")
-    s.message("pages", "web", y - 864, "шаги процесса", kind="reply")
+    s.message("pages", "web", y - 864, "статус обработки", kind="reply")
 
     s.message("user", "web", y - 910, "Нажать «Экспортировать отчёт»")
     s.message("web", "pages", y - 950, "POST /reports/{id}/export")
