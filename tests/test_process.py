@@ -288,6 +288,19 @@ def test_publications_filters(client):
     assert client.get("/publications", params={"q": "несуществующее слово"}).text.count("Ничего не найдено") == 1
 
 
+def test_object_aliases_can_be_edited_and_reindexed(client):
+    with publications_session() as session:
+        rector = session.scalar(select(MonitoringObject).where(MonitoringObject.name == "Ректор ТюмГУ"))
+        assert "Рябинин" in rector.aliases
+    client.post(f"/objects/{rector.id}", data={"aliases": "ректор ТюмГУ, Голубев"})
+    with publications_session() as session:
+        rector = session.get(MonitoringObject, rector.id)
+        assert rector.aliases == ["ректор ТюмГУ", "Голубев"]
+    response = client.get("/publications", params={"object_id": rector.id})
+    assert "проректор по науке" in response.text
+    client.post(f"/objects/{rector.id}", data={"aliases": "ректор ТюмГУ, ректор Тюменского государственного университета, Рябинин"})
+
+
 def test_new_object_is_indexed_immediately(client):
     client.post("/objects", data={"name": "Институт психологии", "kind": "Подразделение", "aliases": "Институт психологии"})
     assert "Институт психологии" in client.get("/objects").text

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Отладка сбора · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Отладка сбора</h1>
+    <p class="lead">Что делает модуль сбора: какой сайт запрошен, что он ответил, где найдено упоминание и что сохранено в базу.</p>
+  </div>
+  <form method="post" action="/debug/collect">
+    <button class="button button-primary" data-busy="Запускаю…">Запустить сбор</button>
+  </form>
+</header>
+
+<section class="card">
+  <h2>Проверить адрес</h2>
+  <p class="hint">Система пройдёт по адресу тем же путём, что и при сборе, и покажет каждый шаг. В базу ничего не записывается. Подходит лента RSS/Atom или страница сайта.</p>
+  <form class="inspect-form" id="inspect-form">
+    <input type="url" name="url" required placeholder="https://news.google.com/rss/search?q=ТюмГУ&hl=ru&gl=RU&ceid=RU:ru" aria-label="Адрес">
+    <button class="button" type="submit">Проверить</button>
+  </form>
+  <div id="inspect-result"></div>
+</section>
+
+<div class="debug-layout">
+  <section class="card">
+    <h2>Запуски</h2>
+    {% if runs %}
+    <ul class="run-list">
+      {% for run in runs %}
+      <li>
+        <a href="/debug?run={{ run.id }}" class="{{ 'active' if run.id == selected }}">
+          № {{ run.id }} · {{ {'schedule': 'по расписанию', 'manual': 'вручную', 'custom': 'свой источник'}.get(run.trigger, run.trigger) }}
+          <small>{{ run.started_at | datetime }}{% if run.finished_at %} · добавлено {{ run.items_added }}{% else %} · идёт{% endif %}</small>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="hint">Запусков ещё не было.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    {% if selected %}
+    <div class="log-toolbar">
+      <strong>Журнал запуска № {{ selected }}</strong>
+      <span class="muted" id="log-state"></span>
+      <label class="check"><input type="checkbox" id="only-found" checked> <span>Скрыть записи без упоминаний</span></label>
+    </div>
+    <div class="counters" id="log-counters"></div>
+    <div class="log" id="log" data-run="{{ selected }}"></div>
+    {% else %}
+    <p class="hint">Нажмите «Запустить сбор», чтобы увидеть, как система обходит источники.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/form.js"></script>
+<script src="/static/js/debug.js"></script>
+{% endblock %}

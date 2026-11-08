@@ -1,9 +1,13 @@
 """Запуск системы одной командой: python run.py
 
-При первом запуске создаёт виртуальное окружение, ставит зависимости и загружает
-тестовые данные. На Windows окружение лежит в %LOCALAPPDATA%, а не в папке проекта:
-иначе OneDrive начинает синхронизировать тысячи служебных файлов.
+При первом запуске создаёт виртуальное окружение и ставит зависимости. Сразу после
+старта система собирает публикации из реальных источников. Флаг --demo добавляет
+100 синтетических новостей для демонстрации.
+
+На Windows окружение лежит в %LOCALAPPDATA%, а не в папке проекта: иначе OneDrive
+начинает синхронизировать тысячи служебных файлов.
 """
+import logging
 import os
 import subprocess
 import sys
@@ -50,11 +54,16 @@ def main() -> None:
         sys.exit(subprocess.call([str(venv_python()), str(ROOT / "run.py"), *sys.argv[1:]]))
 
     sys.path.insert(0, str(ROOT))
-    from app import seed
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+    from app import config, seed
 
-    if seed.is_empty():
-        print("Загружаю 100 синтетических новостей. При первом запуске скачается модель тональности (около 120 МБ)…")
-        print(f"Загружено публикаций: {seed.seed()}")
+    demo = "--demo" in sys.argv
+    added = seed.seed(with_synthetic=demo)
+    if demo:
+        print(f"Тестовый набор: добавлено публикаций {added}")
+    if config.COLLECT_INTERVAL_MINUTES > 0:
+        print(f"Сбор из реальных источников начнётся сразу и будет повторяться каждые {config.COLLECT_INTERVAL_MINUTES} мин.")
+        print("При первом сборе скачается модель тональности (около 120 МБ). Ход сбора: страница «Отладка сбора».")
 
     import uvicorn
 

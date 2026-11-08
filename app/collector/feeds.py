@@ -84,18 +84,35 @@ class _FeedLinkParser(HTMLParser):
             self.links.append(data["href"])
 
 
+def feed_links(html: str, base_url: str) -> list[str]:
+    """Ссылки на ленты, объявленные в заголовке HTML-страницы."""
+    parser = _FeedLinkParser()
+    parser.feed(html)
+    return [urljoin(base_url, link) for link in parser.links]
+
+
 def find_feed_url(url: str) -> str:
     """Адрес может быть лентой или страницей сайта со ссылкой на ленту."""
     response = fetch(url)
     if feedparser.parse(response.content).entries:
         return str(response.url)
-    parser = _FeedLinkParser()
-    parser.feed(response.text)
-    for link in parser.links:
-        candidate = urljoin(str(response.url), link)
+    for candidate in feed_links(response.text, str(response.url)):
         if feedparser.parse(fetch(candidate).content).entries:
             return candidate
     raise CollectorError("На странице не найдена RSS- или Atom-лента")
+
+
+def describe_response(response) -> dict:
+    """Что ответил сервер: для журнала отладки."""
+    elapsed = getattr(response, "elapsed", None)
+    headers = getattr(response, "headers", {}) or {}
+    return {
+        "url": str(getattr(response, "url", "")),
+        "status": getattr(response, "status_code", 200),
+        "bytes": len(response.content),
+        "ms": round(elapsed.total_seconds() * 1000) if elapsed else None,
+        "content_type": headers.get("content-type", ""),
+    }
 
 
 def fetch_article_text(url: str) -> str | None:

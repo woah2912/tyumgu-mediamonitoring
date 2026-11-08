@@ -11,8 +11,8 @@ REPORTS_DB_URL = os.getenv("MM_REPORTS_DB", f"sqlite:///{DATA_DIR / 'reports.db'
 
 SYNTHETIC_NEWS_PATH = BASE_DIR / "data" / "synthetic_news.json"
 
-# Период автоматического сбора из источников, минуты. 0 — только ручной запуск.
-COLLECT_INTERVAL_MINUTES = int(os.getenv("MM_COLLECT_INTERVAL_MINUTES", "60"))
+# Сбор идёт сразу после запуска и затем с этим периодом, минуты. 0 — только ручной запуск.
+COLLECT_INTERVAL_MINUTES = int(os.getenv("MM_COLLECT_INTERVAL_MINUTES", "30"))
 HTTP_TIMEOUT_SECONDS = float(os.getenv("MM_HTTP_TIMEOUT_SECONDS", "15"))
 USER_AGENT = "TyumGU-MediaMonitoring/1.0 (university student project)"
 

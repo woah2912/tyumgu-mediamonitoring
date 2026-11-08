@@ -108,6 +108,25 @@ class CollectionRun(PublicationsBase):
     errors: Mapped[list] = mapped_column(JSON, default=list)
 
 
+class CollectionEvent(PublicationsBase):
+    """Журнал отладки: что модуль сбора увидел на каждом шаге."""
+
+    __tablename__ = "collection_events"
+    __table_args__ = (Index("ix_collection_events_run", "run_id", "id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int | None] = mapped_column(ForeignKey("collection_runs.id"), nullable=True)
+    source_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_name: Mapped[str] = mapped_column(String(200), default="")
+    at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # fetch, parse, skip, match, article, saved, error, done
+    stage: Mapped[str] = mapped_column(String(12))
+    message: Mapped[str] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text, default="")
+    url: Mapped[str] = mapped_column(String(1000), default="")
+    details: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
 # ---------------------------------------------------------------- reports.db
 
 

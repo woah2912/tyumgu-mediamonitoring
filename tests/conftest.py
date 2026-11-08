@@ -18,7 +18,7 @@ from app.main import app  # noqa: E402
 
 @pytest.fixture(scope="session", autouse=True)
 def seeded_database():
-    seed.seed()
+    seed.seed(with_synthetic=True)
 
 
 @pytest.fixture(scope="session")

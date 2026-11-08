@@ -37,6 +37,13 @@ def test_object_is_found_in_any_form(matcher, phrase):
     assert stats.strong == 1
 
 
+def test_headline_repeated_as_text_is_counted_once(matcher):
+    title = "Машкова уволилась из ТюмГУ"
+    document, stats = stats_for(matcher, title, title)
+    assert stats.total == 1 and document.sentences == []
+    assert determine_role([], stats, matcher).role == "main"
+
+
 def test_university_word_counts_only_after_object_is_named(matcher):
     _, unnamed = stats_for(matcher, "Новость", "Университет открыл новый курс.")
     assert unnamed.total == 0 and unnamed.target_sentences == []

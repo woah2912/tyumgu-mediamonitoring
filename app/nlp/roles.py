@@ -37,6 +37,8 @@ def determine_role(entities: list[dict], stats: MentionStats, matcher: ObjectMat
 
     if object_leads and (stats.in_title or stats.in_lead) and stats.total >= 2:
         role = "main"
+    elif stats.in_title and not stats.total_sentences:
+        role = "main"  # есть только заголовок, и объект в нём
     elif stats.in_title and stats.total >= 2:
         role = "main"
     elif stats.total == 1 and not stats.in_title and not stats.in_lead:

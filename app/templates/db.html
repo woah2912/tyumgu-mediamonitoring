@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Базы данных · Медиамониторинг ТюмГУ{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Базы данных</h1>
+    <p class="lead">Содержимое обеих баз в режиме просмотра: таблицы, число записей и сами записи.</p>
+  </div>
+</header>
+
+{% if message %}<div class="notice notice-success">{{ message }}</div>{% endif %}
+
+<section class="grid grid-two">
+  {% for database in overview %}
+  <div class="card">
+    <h2>{{ database.title }}</h2>
+    <p class="hint">{{ database.path }}{% if database.size %} · {{ database.size }}{% endif %}</p>
+    <div class="table-wrap">
+      <table class="data-table compact">
+        <thead><tr><th>Таблица</th><th class="num">Записей</th></tr></thead>
+        <tbody>
+          {% for name, count in database.tables %}
+          <tr><td><a class="strong-link" href="/db/{{ database.key }}/{{ name }}">{{ name }}</a></td><td class="num">{{ count }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Тестовые данные</h2>
+  <p class="hint">100 синтетических новостей с вымышленными изданиями и персонами. Нужны для демонстрации и тестов. В рабочей базе их лучше не держать: они попадут в отчёты.</p>
+  <div class="db-actions">
+    <form method="post" action="/db/demo/load"><button class="button" data-busy="Загружаю…">Загрузить тестовые данные</button></form>
+    <form method="post" action="/db/demo/delete" onsubmit="return confirm('Удалить все синтетические публикации и их источники? Отчёты останутся.')">
+      <button class="button">Удалить тестовые данные</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/form.js"></script>{% endblock %}

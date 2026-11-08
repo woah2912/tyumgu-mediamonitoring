@@ -6,7 +6,7 @@
 """
 from dataclasses import dataclass, field
 
-from app.nlp.text import ParsedDocument, lemmatize
+from app.nlp.text import ParsedDocument, lemmatize, word_spans
 
 LEAD_SENTENCES = 2
 
@@ -86,6 +86,22 @@ class ObjectMatcher:
             for start in range(len(lemmas) - len(pattern) + 1)
             if tuple(lemmas[start : start + len(pattern)]) == pattern
         ]
+
+    def find_spans(self, text: str) -> list[dict]:
+        """Где в исходном тексте стоит название объекта: позиции символов и сила псевдонима."""
+        tokens = word_spans(text)
+        lemmas = [token[2] for token in tokens]
+        spans = []
+        for strength, patterns in (("strong", self.aliases), ("weak", self.weak_aliases)):
+            for pattern in patterns:
+                for start in self._starts(lemmas, pattern):
+                    spans.append({"start": tokens[start][0], "end": tokens[start + len(pattern) - 1][1], "strength": strength})
+        return sorted(spans, key=lambda span: span["start"])
+
+    @staticmethod
+    def _starts(lemmas: list[str], pattern: tuple[str, ...]) -> list[int]:
+        size = len(pattern)
+        return [start for start in range(len(lemmas) - size + 1) if tuple(lemmas[start : start + size]) == pattern]
 
     def other_organization_hits(self, document: ParsedDocument) -> int:
         lemmas = document.all_lemmas

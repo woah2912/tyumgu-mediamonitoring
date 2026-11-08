@@ -72,7 +72,16 @@ class Diagram:
         )
         self.axis.text(x + 14, y + 12, label, fontsize=10, fontweight="bold", color="#5a5a5a", va="bottom", zorder=2)
 
-    def arrow(self, start, end, label="", tech="", at=0.5, offset=(0, 0), curve=0.0, dashed=True):
+    def arrow(self, start, end, label="", tech="", at=0.5, offset=(0, 0), curve=0.0, dashed=True, via=()):
+        if via:
+            # Ломаная: промежуточные отрезки линией, стрелка на последнем.
+            points = [start, *via]
+            xs, ys = zip(*points)
+            self.axis.plot(xs, ys, color=LINE, linewidth=1.1, linestyle=(0, (5, 3)) if dashed else "-", zorder=2)
+            label_start, label_end = via[0], via[1] if len(via) > 1 else end
+            start = via[-1]
+        else:
+            label_start, label_end = start, end
         self.axis.add_patch(
             FancyArrowPatch(
                 start, end, arrowstyle="-|>", mutation_scale=13, color=LINE, linewidth=1.1,
@@ -82,8 +91,8 @@ class Diagram:
         )
         if label:
             text = label + (f"\n[{tech}]" if tech else "")
-            x = start[0] + (end[0] - start[0]) * at + offset[0]
-            y = start[1] + (end[1] - start[1]) * at + offset[1]
+            x = label_start[0] + (label_end[0] - label_start[0]) * at + offset[0]
+            y = label_start[1] + (label_end[1] - label_start[1]) * at + offset[1]
             self.axis.text(
                 x, y, text, ha="center", va="center", fontsize=8, color=INK, zorder=6, linespacing=1.15,
                 bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="none", alpha=0.93),
@@ -162,7 +171,8 @@ def components() -> None:
     d.boundary(380, 30, 1420, 1170, "Сервер приложения (FastAPI)")
     d.boundary(415, 75, 1350, 195, "NLP-модули")
 
-    d.box(640, 1040, width, height, "Страницы", "Компонент: app/web/pages.py", "Форма запроса, отчёт, анализ руководства, справочники", COMPONENT, INK, wrap=38)
+    d.box(420, 1040, width, height, "Отладка и просмотр БД", "Компонент: app/web/admin.py", "Журнал сбора, проверка адреса, таблицы обеих баз", COMPONENT, INK, wrap=38)
+    d.box(860, 1040, width, height, "Страницы", "Компонент: app/web/pages.py", "Форма запроса, отчёт, анализ руководства, справочники", COMPONENT, INK, wrap=38)
     d.box(1300, 1040, width, height, "JSON API", "Компонент: app/web/api.py", "Статус обработки и данные таблиц", COMPONENT, INK, wrap=38)
 
     d.box(420, 780, width, height, "Модуль сбора", "Компонент: feedparser, httpx, trafilatura", "Плановый и ручной сбор, свои источники, полный текст", COMPONENT, INK, wrap=38)
@@ -182,12 +192,16 @@ def components() -> None:
     d.database(30, 510, 300, 140, "База публикаций", "Контейнер: SQLite", "", wrap=30)
     d.database(1850, 620, 300, 140, "База отчётов", "Контейнер: SQLite", "", wrap=30)
 
-    d.arrow((1000, 1260), (880, 1160), "Запрос, экспорт, решения", "HTTP", offset=(-112, 6))
-    d.arrow((1200, 1260), (1400, 1160), "Опрос статуса и данные", "JSON", offset=(112, 6))
+    d.arrow((940, 1290), (700, 1160), "Отладка, базы данных", "HTTP", at=0.3, offset=(-100, 8))
+    d.arrow((1030, 1260), (1030, 1160), "Запрос, экспорт,\nрешения", "HTTP", at=0.72, offset=(0, 0))
+    d.arrow((1220, 1260), (1420, 1160), "Опрос статуса и данные", "JSON", at=0.7, offset=(112, 6))
 
-    d.arrow((720, 1040), (640, 900), "Свои источники,\nзапуск сбора", offset=(-70, 0))
-    d.arrow((880, 1040), (1020, 900), "Запускает\nобработку", at=0.5, offset=(62, 8))
-    d.arrow((980, 1085), (1490, 980), "Команда экспорта", at=0.6, offset=(0, 20))
+    d.arrow((560, 1040), (560, 900), "Журнал отладки,\nпроверка адреса", offset=(-4, 0))
+    d.arrow((420, 1075), (320, 650), "Читает таблицы", "SQL", at=0.25, offset=(-50, 0))
+    d.arrow((760, 1150), (2100, 760), "Читает таблицы", "SQL", at=0.8, via=((760, 1225), (2100, 1225)), offset=(0, 14))
+    d.arrow((900, 1040), (700, 900), "Свои источники,\nзапуск сбора", offset=(10, 26))
+    d.arrow((1040, 1040), (1060, 900), "Запускает\nобработку", at=0.5, offset=(50, 0))
+    d.arrow((1200, 1080), (1500, 980), "Команда экспорта", at=0.35, offset=(-10, -22))
 
     d.arrow((420, 840), (330, 840), "Забирает\nленты", "RSS", offset=(0, 62))
     d.arrow((590, 780), (590, 640), "Новые записи", at=0.16)
@@ -200,7 +214,7 @@ def components() -> None:
     d.arrow((1240, 850), (1850, 720), "Сохраняет снимок", "SQL", at=0.5, offset=(0, -26))
 
     d.arrow((1760, 900), (1910, 760), "Сохраняет\nфайлы", "SQL", offset=(-72, -12))
-    d.arrow((1640, 1090), (2020, 760), "Читает", "SQL", offset=(34, 22))
+    d.arrow((1640, 1090), (1960, 760), "Читает", "SQL", offset=(30, 20))
 
     d.legend(30, 2, [(CONTAINER, "Контейнер"), (COMPONENT, "Компонент"), (EXTERNAL, "Внешняя система")])
     d.save("c4-3-components")

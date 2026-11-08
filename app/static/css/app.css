@@ -54,16 +54,9 @@ p { margin: 0 0 10px; }
   color: #fff;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; color: #fff; text-decoration: none; }
-.brand-mark {
-  display: grid; place-items: center;
-  width: 34px; height: 34px;
-  border-radius: 8px;
-  background: #fff;
-  color: var(--side);
-  font-weight: 800;
-}
-.brand-text { font-weight: 650; line-height: 1.15; }
-.brand-text small { display: block; font-weight: 400; color: #b7d3f6; font-size: 12px; margin-top: 2px; }
+.brand { flex-direction: column; align-items: flex-start; gap: 8px; }
+.brand-logo { height: 64px; width: auto; display: block; }
+.brand-text { font-weight: 600; font-size: 14px; color: #b7d3f6; }
 .nav-group { margin: 16px 8px 4px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: #9ec5f4; }
 .sidebar nav a { display: block; padding: 7px 10px; border-radius: 6px; color: #fff; text-decoration: none; font-size: 14px; }
 .sidebar nav a:hover { background: var(--side-2); }
@@ -338,4 +331,40 @@ a.strong-link:hover { color: var(--accent-dark); text-decoration: underline; }
   .lane { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .filters { grid-template-columns: minmax(0, 1fr); }
   .queue li { flex-direction: column; align-items: flex-start; gap: 4px; }
+}
+
+/* --- Служебные экраны --- */
+.debug-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 14px; align-items: start; }
+.run-list { list-style: none; margin: 0; padding: 0; }
+.run-list a { display: block; padding: 7px 9px; border-radius: 6px; text-decoration: none; color: var(--ink); font-size: 13px; }
+.run-list a.active { background: var(--accent-wash); color: var(--accent-dark); }
+.run-list small { display: block; color: var(--ink-3); }
+.log-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 10px; font-size: 14px; }
+.counters { display: flex; flex-wrap: wrap; gap: 6px; }
+.counter { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.log { font-size: 13px; max-height: 70vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.log-row { display: grid; grid-template-columns: 64px 150px 84px minmax(0, 1fr); gap: 8px; padding: 5px 9px; border-bottom: 1px solid var(--line); }
+.log-row:last-child { border-bottom: 0; }
+.log-row[hidden] { display: none; }
+.log-time, .log-source { color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-title { color: var(--ink-2); }
+.stage { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); align-self: start; text-align: center; }
+.stage-match, .stage-saved { background: var(--good-wash); color: var(--good); }
+.stage-fetch, .stage-parse, .stage-article { background: var(--accent-wash); color: var(--accent-dark); }
+.stage-error { background: var(--bad-wash); color: var(--bad); }
+.fragment { margin: 4px 0 0; padding: 4px 8px; border-left: 3px solid var(--line-2); background: var(--surface-2); color: var(--ink-2); }
+.fragment mark { background: #ffe58a; color: var(--ink); padding: 0 2px; border-radius: 2px; font-weight: 600; }
+.fragment mark.weak { background: #fde2c4; }
+.inspect-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.inspect-item { border-top: 1px solid var(--line); padding: 10px 0; }
+.inspect-item.found { border-left: 3px solid var(--good); padding-left: 10px; }
+.kv { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+.db-cell { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.db-value { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+.db-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.db-actions form { margin: 0; }
+@media (max-width: 860px) {
+  .debug-layout { grid-template-columns: minmax(0, 1fr); }
+  .log-row { grid-template-columns: 60px minmax(0, 1fr); }
+  .log-source, .stage { grid-column: 2; }
 }

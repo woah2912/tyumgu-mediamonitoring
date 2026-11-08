@@ -11,7 +11,7 @@
 <section class="card">
   <div class="table-wrap">
     <table class="data-table">
-      <thead><tr><th>Объект</th><th>Тип</th><th>Названия</th><th>Слабые названия</th><th class="num">Публикаций</th></tr></thead>
+      <thead><tr><th>Объект</th><th>Тип</th><th>Названия</th><th>Слабые названия</th><th class="num">Публикаций</th><th></th></tr></thead>
       <tbody>
         {% for item, count in rows %}
         <tr>
@@ -20,6 +20,20 @@
           <td>{{ item.aliases | join(', ') }}</td>
           <td>{{ item.weak_aliases | join(', ') or '—' }}</td>
           <td class="num">{{ count }}</td>
+          <td>
+            <details>
+              <summary class="link-button">Изменить</summary>
+              <form method="post" action="/objects/{{ item.id }}" class="stack-small">
+                <label class="field-label" for="aliases_{{ item.id }}">Однозначные названия</label>
+                <input id="aliases_{{ item.id }}" name="aliases" value="{{ item.aliases | join(', ') }}" required>
+                <label class="field-label" for="weak_{{ item.id }}">Слабые названия</label>
+                <input id="weak_{{ item.id }}" name="weak_aliases" value="{{ item.weak_aliases | join(', ') }}">
+                <label class="field-label" for="other_{{ item.id }}">Похожие организации</label>
+                <input id="other_{{ item.id }}" name="other_organizations" value="{{ item.other_organizations | join(', ') }}">
+                <div><button class="button" data-busy="Переиндексирую…">Сохранить</button></div>
+              </form>
+            </details>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

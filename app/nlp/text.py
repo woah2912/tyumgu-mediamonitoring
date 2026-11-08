@@ -34,6 +34,11 @@ def words(text: str) -> list[str]:
     return _WORD.findall(text)
 
 
+def word_spans(text: str) -> list[tuple[int, int, str]]:
+    """Слова с позициями в исходном тексте и леммами: нужны для подсветки находок."""
+    return [(match.start(), match.end(), lemma(match.group())) for match in _WORD.finditer(text)]
+
+
 def lemmatize(text: str) -> list[str]:
     return [lemma(word) for word in words(text)]
 
@@ -68,7 +73,8 @@ class ParsedDocument:
 
 
 def parse_document(title: str, text: str) -> ParsedDocument:
-    sentences = split_sentences(text)
+    # Агрегаторы присылают заголовок вместо текста: второй раз его считать нельзя.
+    sentences = [] if text.strip() == title.strip() else split_sentences(text)
     return ParsedDocument(
         title=title,
         text=text,

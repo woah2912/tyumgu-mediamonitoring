@@ -19,9 +19,13 @@ def known_urls(session: Session) -> set[str]:
     return set(session.scalars(select(Publication.url)).all())
 
 
-def has_mention(title: str, text: str, matchers: list[ObjectMatcher]) -> bool:
+def find_mentions(title: str, text: str, matchers: list[ObjectMatcher]) -> list[tuple[ObjectMatcher, object]]:
     document = parse_document(title, text)
-    return any(matcher.match(document).total for matcher in matchers)
+    return [(matcher, stats) for matcher in matchers if (stats := matcher.match(document)).total]
+
+
+def has_mention(title: str, text: str, matchers: list[ObjectMatcher]) -> bool:
+    return bool(find_mentions(title, text, matchers))
 
 
 def ingest_item(

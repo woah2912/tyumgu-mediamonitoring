@@ -41,7 +41,7 @@ def main() -> None:
     from app.pipeline.report import ALL_CONTEXTS, ReportRequest, finish_report, start_report
 
     print("Метод тональности:", method_name())
-    seed.seed()
+    seed.seed(with_synthetic=True)
     dataset = json.loads((ROOT / "data" / "synthetic_news.json").read_text(encoding="utf-8"))
     labels = {entry["url"]: entry["labels"] for entry in dataset["publications"]}
 

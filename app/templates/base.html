@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Медиамониторинг ТюмГУ{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/img/favicon.png">
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
   <aside class="sidebar">
     <a class="brand" href="/">
-      <span class="brand-mark">М</span>
-      <span class="brand-text">Медиамониторинг<small>ТюмГУ</small></span>
+      <img class="brand-logo" src="/static/img/utmn-logo.svg" alt="ТюмГУ">
+      <span class="brand-text">Медиамониторинг</span>
     </a>
     <nav>
       <p class="nav-group">Сотрудник УСК</p>
@@ -22,6 +23,9 @@
       <a href="/publications" class="{{ 'active' if active == 'publications' }}">Публикации</a>
       <a href="/sources" class="{{ 'active' if active == 'sources' }}">Источники и сбор</a>
       <a href="/objects" class="{{ 'active' if active == 'objects' }}">Объекты мониторинга</a>
+      <p class="nav-group">Администрирование</p>
+      <a href="/debug" class="{{ 'active' if active == 'debug' }}">Отладка сбора</a>
+      <a href="/db" class="{{ 'active' if active == 'db' }}">Базы данных</a>
       <p class="nav-group">О системе</p>
       <a href="/method" class="{{ 'active' if active == 'method' }}">Методика</a>
     </nav>

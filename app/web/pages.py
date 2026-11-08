@@ -7,13 +7,13 @@ from urllib.parse import quote
 from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import joinedload
 
 from app import metrics as metrics_module
 from app import rules
 from app.collector import feeds
-from app.collector.service import collect_all, collect_source, last_run, register_custom_source
+from app.collector.service import collect_custom, execute_run, last_run, register_custom_source, start_run
 from app.db import publications_session, reports_session
 from app.export.service import export_report
 from app.models import (
@@ -37,6 +37,7 @@ router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
 
 PAGE_SIZE = 25
+DEFAULT_PERIOD_DAYS = 90
 STATUS_LABELS = {
     "processing": "Обрабатывается",
     "ready": "Готов к экспорту",
@@ -72,13 +73,12 @@ def _form_context(session) -> dict:
     sources = session.scalars(
         select(Source).where(Source.is_active, Source.parent_id.is_(None)).order_by(Source.authority.desc(), Source.name)
     ).all()
-    first = session.scalar(select(func.min(Publication.published_at)))
     today = date.today()
     return {
         "objects": session.scalars(select(MonitoringObject).order_by(MonitoringObject.id)).all(),
         "contexts": {ALL_CONTEXTS: context_name(ALL_CONTEXTS), **TOPIC_NAMES},
         "groups": [(rules.LEVEL_LABELS[level], [item for item in sources if item.level == level]) for level in rules.LEVEL_LABELS],
-        "default_from": (first.date() if first else today - timedelta(days=90)).isoformat(),
+        "default_from": (today - timedelta(days=DEFAULT_PERIOD_DAYS)).isoformat(),
         "default_to": today.isoformat(),
         "today": today.isoformat(),
     }
@@ -101,7 +101,7 @@ def _add_custom_sources(raw: str) -> tuple[list[int], list[str]]:
         except feeds.CollectorError as error:
             warnings.append(f"{url}: {error}")
             continue
-        result = collect_source(source_id)
+        result = collect_custom(source_id)
         if result.error:
             warnings.append(f"{url}: {result.error}")
         source_ids.append(source_id)
@@ -357,14 +357,16 @@ def add_source(name: str = Form(""), url: str = Form(...)):
         source_id, _ = register_custom_source(url, name)
     except feeds.CollectorError as error:
         return RedirectResponse(f"/sources?error={quote(str(error))}", status_code=303)
-    collect_source(source_id)
+    collect_custom(source_id)
     return RedirectResponse("/sources", status_code=303)
 
 
 @router.post("/sources/collect")
 def run_collection(background: BackgroundTasks):
-    background.add_task(collect_all, "manual")
-    return RedirectResponse("/sources", status_code=303)
+    run_id, is_new = start_run("manual")
+    if is_new:
+        background.add_task(execute_run, run_id)
+    return RedirectResponse(f"/debug?run={run_id}", status_code=303)
 
 
 @router.post("/sources/{source_id}/toggle")
@@ -413,6 +415,27 @@ def add_object(
             session.add(item)
             session.flush()
             index_object_mentions(session, item)
+    return RedirectResponse("/objects", status_code=303)
+
+
+@router.post("/objects/{object_id}")
+def edit_object(
+    object_id: int,
+    aliases: str = Form(...),
+    weak_aliases: str = Form(""),
+    other_organizations: str = Form(""),
+):
+    """Новые названия сразу применяются и к уже собранным публикациям."""
+    with publications_session() as session:
+        item = session.get(MonitoringObject, object_id)
+        if item is None:
+            raise HTTPException(404, "Объект не найден")
+        item.aliases = _split(aliases)
+        item.weak_aliases = _split(weak_aliases)
+        item.other_organizations = _split(other_organizations)
+        item.note = ""
+        session.execute(delete(Mention).where(Mention.object_id == object_id))
+        index_object_mentions(session, item)
     return RedirectResponse("/objects", status_code=303)
 
 
