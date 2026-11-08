@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Медиамониторинг ТюмГУ{% endblock %}</title>
-  <link rel="icon" type="image/png" href="/static/img/favicon.png">
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" type="image/png" href="{{ asset('img/favicon.png') }}">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body>
   <aside class="sidebar">
     <a class="brand" href="/">
-      <img class="brand-logo" src="/static/img/utmn-logo.svg" alt="ТюмГУ">
+      <img class="brand-logo" src="{{ asset('img/utmn-logo.svg') }}" alt="ТюмГУ">
       <span class="brand-text">Медиамониторинг</span>
     </a>
     <nav>

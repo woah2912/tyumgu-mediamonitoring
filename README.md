@@ -67,7 +67,7 @@ python run.py --demo
 | Тематика | Navec, scikit-learn | Классификация по справочнику без обучения, кластеризация KMeans |
 | Тональность | rubert-tiny2 и тональный словарь | Гибридная оценка по шкале от −1 до +1 |
 | Документы | python-docx, ReportLab, openpyxl, matplotlib | DOCX, PDF, XLSX с графиками |
-| Тесты | pytest | 80 автоматических тестов |
+| Тесты | pytest | 81 автоматический тест |
 
 ## Диаграммы UML
 

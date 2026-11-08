@@ -234,6 +234,12 @@ def test_menu_has_no_removed_sections(client):
     assert "Анализ отчётов" not in page and "Методика" not in page
 
 
+def test_static_files_are_versioned_against_stale_cache(client):
+    page = client.get("/debug").text
+    assert "/static/css/app.css?v=" in page and "/static/js/debug.js?v=" in page
+    assert 'href="/static/css/app.css"' not in page
+
+
 def test_report_page_has_no_bpmn_tracker(client, report_id):
     page = client.get(f"/reports/{report_id}").text
     assert "Ход процесса" not in page and "BPMN" not in page

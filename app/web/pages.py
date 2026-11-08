@@ -33,6 +33,7 @@ from app.pipeline.report import ALL_CONTEXTS, ReportRequest, context_name, finis
 
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+STATIC_DIR = Path(__file__).parent.parent / "static"
 
 PAGE_SIZE = 25
 DEFAULT_PERIOD_DAYS = 90
@@ -48,6 +49,11 @@ def _date(value: datetime | None, pattern: str = "%d.%m.%Y") -> str:
     return value.strftime(pattern) if value else "—"
 
 
+def _asset(path: str) -> str:
+    """Адрес статического файла с меткой версии: после обновления браузер не возьмёт старую копию из кэша."""
+    return f"/static/{path}?v={int((STATIC_DIR / path).stat().st_mtime)}"
+
+
 templates.env.filters["date"] = _date
 templates.env.filters["datetime"] = lambda value: _date(value, "%d.%m.%Y %H:%M")
 templates.env.filters["filesize"] = lambda size: f"{size / 1024:.0f} КБ" if size < 1_048_576 else f"{size / 1_048_576:.1f} МБ"
@@ -59,6 +65,7 @@ templates.env.globals.update(
     LEVEL_LABELS=rules.LEVEL_LABELS,
     ENTITY_LABELS=ENTITY_LABELS,
     rules=rules,
+    asset=_asset,
 )
 
 

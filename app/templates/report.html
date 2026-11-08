@@ -209,7 +209,7 @@
 {% if data %}<script type="application/json" id="report-data">{{ payload | safe }}</script>{% endif %}
 {% endblock %}
 {% block scripts %}
-<script src="/static/vendor/chart.umd.js"></script>
-<script src="/static/js/report.js"></script>
-<script src="/static/js/form.js"></script>
+<script src="{{ asset('vendor/chart.umd.js') }}"></script>
+<script src="{{ asset('js/report.js') }}"></script>
+<script src="{{ asset('js/form.js') }}"></script>
 {% endblock %}
