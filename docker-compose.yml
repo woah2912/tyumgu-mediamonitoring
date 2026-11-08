@@ -1,0 +1,22 @@
+# Запуск:     docker compose up -d --build
+# Остановка:  docker compose down
+# Журнал:     docker compose logs -f
+services:
+  mediamonitoring:
+    build: .
+    image: tyumgu-mediamonitoring
+    container_name: tyumgu-mediamonitoring
+    ports:
+      # Система открыта только на этом компьютере. Чтобы её видели другие в сети,
+      # замените строку на "8000:8000": авторизации нет, служебные экраны увидят все.
+      - "127.0.0.1:8000:8000"
+    environment:
+      MM_COLLECT_INTERVAL_MINUTES: "30"
+      # 1 — добавить 100 синтетических новостей для демонстрации.
+      MM_DEMO: "0"
+    volumes:
+      - mediamonitoring-data:/data
+    restart: unless-stopped
+
+volumes:
+  mediamonitoring-data:

@@ -5,7 +5,8 @@
 100 синтетических новостей для демонстрации.
 
 На Windows окружение лежит в %LOCALAPPDATA%, а не в папке проекта: иначе OneDrive
-начинает синхронизировать тысячи служебных файлов.
+начинает синхронизировать тысячи служебных файлов. В Docker зависимости уже
+установлены в образ, поэтому там окружение не создаётся (MM_SKIP_VENV=1).
 """
 import logging
 import os
@@ -49,7 +50,8 @@ def main() -> None:
     if sys.version_info < MIN_PYTHON:
         sys.exit("Нужен Python 3.12 или новее.")
 
-    if Path(sys.prefix).resolve() != venv_dir().resolve():
+    skip_venv = os.getenv("MM_SKIP_VENV") == "1"
+    if not skip_venv and Path(sys.prefix).resolve() != venv_dir().resolve():
         ensure_environment()
         sys.exit(subprocess.call([str(venv_python()), str(ROOT / "run.py"), *sys.argv[1:]]))
 
@@ -57,7 +59,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S")
     from app import config, seed
 
-    demo = "--demo" in sys.argv
+    demo = "--demo" in sys.argv or os.getenv("MM_DEMO") == "1"
     added = seed.seed(with_synthetic=demo)
     if demo:
         print(f"Тестовый набор: добавлено публикаций {added}")
