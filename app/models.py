@@ -143,7 +143,7 @@ class Report(ReportsBase):
     date_from: Mapped[datetime] = mapped_column(DateTime)
     date_to: Mapped[datetime] = mapped_column(DateTime)
     sources: Mapped[list] = mapped_column(JSON, default=list)
-    # processing → ready → exported → closed; failed при ошибке обработки.
+    # processing → ready → exported; failed при ошибке обработки.
     status: Mapped[str] = mapped_column(String(20), default="processing")
     steps: Mapped[list] = mapped_column(JSON, default=list)
     metrics: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -151,10 +151,11 @@ class Report(ReportsBase):
     methods: Mapped[dict] = mapped_column(JSON, default=dict)
     has_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Поле удалённого раздела руководства. В старых базах оно обязательное,
+    # поэтому остаётся в модели, иначе отчёты в них перестанут сохраняться.
     review_summary: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     exported_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     publications: Mapped[list["ReportPublication"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     documents: Mapped[list["ReportDocument"]] = relationship(back_populates="report", cascade="all, delete-orphan")
@@ -195,7 +196,6 @@ class ReportPublication(ReportsBase):
     reputation_weight: Mapped[int] = mapped_column(Integer, default=0)
 
     report: Mapped[Report] = relationship(back_populates="publications")
-    review: Mapped["MentionReview | None"] = relationship(back_populates="publication", cascade="all, delete-orphan", uselist=False)
 
 
 class ReportDocument(ReportsBase):
@@ -213,18 +213,3 @@ class ReportDocument(ReportsBase):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     report: Mapped[Report] = relationship(back_populates="documents")
-
-
-class MentionReview(ReportsBase):
-    """Решение руководства по негативному упоминанию."""
-
-    __tablename__ = "mention_reviews"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    report_publication_id: Mapped[int] = mapped_column(ForeignKey("report_publications.id"), unique=True)
-    weight: Mapped[int] = mapped_column(Integer)
-    is_influential: Mapped[bool] = mapped_column(Boolean, default=False)
-    reaction: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
-    publication: Mapped[ReportPublication] = relationship(back_populates="review")

@@ -171,7 +171,6 @@ input[type="checkbox"], input[type="radio"] { width: auto; margin: 3px 0 0; acce
 .status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
 .status-ready { background: var(--accent-wash); color: var(--accent-dark); }
 .status-exported { background: var(--warn-wash); color: var(--warn-ink); }
-.status-closed { background: var(--good-wash); color: var(--good); }
 .status-failed { background: var(--bad-wash); color: var(--bad); }
 
 .tone { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
@@ -282,29 +281,6 @@ a.strong-link:hover { color: var(--accent-dark); text-decoration: underline; }
 .document-size { color: var(--ink-3); font-size: 13px; }
 .after-documents { margin: 12px 0 0; }
 
-/* --- Руководство --- */
-.queue { list-style: none; margin: 0; padding: 0; }
-.queue li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--line); }
-.queue li:last-child { border-bottom: 0; }
-.queue-stats { display: flex; gap: 16px; font-size: 14px; color: var(--ink-2); white-space: nowrap; }
-.gateway { margin: 0; }
-.mention-head { display: flex; justify-content: space-between; gap: 18px; }
-.mention h3 { margin: 0 0 2px; font-size: 16px; color: var(--ink); }
-.mention h3 a { color: inherit; }
-.mention-text { margin-top: 8px; color: var(--ink-2); font-size: 14px; }
-.weight-box { flex: none; text-align: center; padding: 5px 12px; border-radius: 6px; background: var(--surface-2); }
-.weight-high { background: var(--bad-wash); color: var(--bad); }
-.weight-value { display: block; font-size: 22px; font-weight: 650; line-height: 1.15; }
-.weight-caption { font-size: 11px; color: var(--ink-2); }
-.mention-form { display: grid; grid-template-columns: 150px 190px minmax(0, 1fr); gap: 16px; align-items: start; border-top: 1px solid var(--line); padding-top: 4px; }
-.radio-row { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0 16px; }
-.radio-row legend { padding: 0; }
-
-.definitions { margin: 0; }
-.definitions dt { font-weight: 600; margin-top: 8px; }
-.definitions dt:first-child { margin-top: 0; }
-.definitions dd { margin: 0; color: var(--ink-2); font-size: 14px; }
-
 .article { font-size: 16px; line-height: 1.6; }
 .empty-state { text-align: center; padding: 32px 16px; color: var(--ink-2); }
 .empty-state h2 { color: var(--ink); }
@@ -326,11 +302,8 @@ a.strong-link:hover { color: var(--accent-dark); text-decoration: underline; }
   .head-actions { flex-wrap: wrap; }
   .tiles, .grid-two, .grid-three, .grid-summary, .grid-article { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mention-form { grid-template-columns: minmax(0, 1fr); }
-  .mention-head { flex-direction: column; }
   .lane { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .filters { grid-template-columns: minmax(0, 1fr); }
-  .queue li { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
 
 /* --- Служебные экраны --- */

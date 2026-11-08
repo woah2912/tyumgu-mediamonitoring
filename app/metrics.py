@@ -126,7 +126,7 @@ def build_conclusions(metrics: dict, object_name: str) -> list[str]:
         conclusions.append(f"Больше всего негатива {where}: негативных публикаций {most_negative}.")
     if metrics["influential"]:
         conclusions.append(
-            f"Влиятельных негативных упоминаний: {metrics['influential']}. Руководству нужно оценить их и принять решение о реакции."
+            f"Влиятельных негативных упоминаний (вес от {rules.INFLUENTIAL_FROM}): {metrics['influential']}. Их стоит разобрать в первую очередь."
         )
     elif metrics["negative"]:
         conclusions.append("Негативные упоминания есть, но ни одно не достигает порога влиятельности.")

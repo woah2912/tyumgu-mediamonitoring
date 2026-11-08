@@ -11,7 +11,7 @@ from sqlalchemy import select
 from app import config
 from app.collector import feeds
 from app.db import publications_session, reports_session
-from app.models import MentionReview, MonitoringObject, Report, ReportDocument, ReportPublication, Source
+from app.models import MonitoringObject, Report, ReportDocument, ReportPublication, Source
 
 
 def form_data(**overrides) -> dict:
@@ -118,11 +118,6 @@ def test_report_page_and_api(client, report_id):
     assert len(rows) == 100 and {"title", "sentiment", "topic", "role", "status"} <= set(rows[0])
 
 
-def test_review_requires_export(client, report_id):
-    response = client.get(f"/reports/{report_id}/review", follow_redirects=False)
-    assert response.status_code == 303
-
-
 def test_export_saves_documents_into_reports_database(client, report_id):
     response = client.post(f"/reports/{report_id}/export", follow_redirects=False)
     assert response.status_code == 303
@@ -160,59 +155,6 @@ def test_document_of_other_report_is_not_served(client, report_id):
     with reports_session() as session:
         document_id = session.scalar(select(ReportDocument.id).where(ReportDocument.report_id == report_id))
     assert client.get(f"/reports/{report_id + 1000}/documents/{document_id}").status_code == 404
-
-
-def test_management_review_closes_process(client, report_id):
-    assert "Есть негативные упоминания" in client.get(f"/reports/{report_id}/review").text
-    assert f"Отчёт № {report_id}" in client.get("/review").text
-
-    with reports_session() as session:
-        negative = session.scalars(
-            select(ReportPublication).where(
-                ReportPublication.report_id == report_id,
-                ReportPublication.status == "relevant",
-                ReportPublication.sentiment == "negative",
-            )
-        ).all()
-        first, second = negative[0].id, negative[1].id
-
-    response = client.post(
-        f"/reports/{report_id}/review",
-        data={
-            "summary": "Риск оценён",
-            f"weight_{first}": "90",
-            f"influential_{first}": "yes",
-            f"reaction_{first}": "Подготовить комментарий",
-            f"weight_{second}": "20",
-            f"influential_{second}": "no",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
-
-    with reports_session() as session:
-        report = session.get(Report, report_id)
-        assert report.status == "closed" and report.review_summary == "Риск оценён"
-        assert steps_of(report)["react"]["status"] == "done"
-        reviews = {item.report_publication_id: item for item in session.scalars(select(MentionReview)).all()}
-        assert reviews[first].is_influential and reviews[first].reaction == "Подготовить комментарий"
-        assert not reviews[second].is_influential and reviews[second].weight == 20
-
-    assert client.post(f"/reports/{report_id}/review", data={}).status_code == 409
-
-
-def test_report_without_negative_mentions_skips_reaction(client):
-    report_id = create_report(client, context_code="social")
-    with reports_session() as session:
-        items = session.scalars(select(ReportPublication).where(ReportPublication.report_id == report_id)).all()
-        for item in items:
-            if item.sentiment == "negative":
-                item.sentiment = "neutral"
-    client.post(f"/reports/{report_id}/export")
-    client.post(f"/reports/{report_id}/review", data={})
-    with reports_session() as session:
-        steps = steps_of(session.get(Report, report_id))
-        assert steps["weight"]["status"] == "skipped" and steps["react"]["status"] == "skipped"
 
 
 def test_context_and_keywords_narrow_selection(client):
@@ -277,9 +219,25 @@ def test_unreachable_custom_source_is_reported(client, monkeypatch):
     assert "Источник недоступен" in response.text
 
 
-@pytest.mark.parametrize("path", ["/", "/reports", "/review", "/publications", "/sources", "/objects", "/method"])
+@pytest.mark.parametrize("path", ["/", "/reports", "/publications", "/sources", "/objects", "/debug", "/db"])
 def test_pages_open(client, path):
     assert client.get(path).status_code == 200
+
+
+@pytest.mark.parametrize("path", ["/review", "/method", "/reports/1/review"])
+def test_removed_sections_are_gone(client, path):
+    assert client.get(path).status_code == 404
+
+
+def test_menu_has_no_removed_sections(client):
+    page = client.get("/").text
+    assert "Анализ отчётов" not in page and "Методика" not in page
+
+
+def test_report_steps_cover_employee_and_system_lanes_only(report_id):
+    with reports_session() as session:
+        lanes = {step["lane"] for step in session.get(Report, report_id).steps}
+    assert lanes == {"system", "employee"}
 
 
 def test_publications_filters(client):

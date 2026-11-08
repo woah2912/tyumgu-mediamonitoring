@@ -33,9 +33,6 @@ STEPS = [
     ("analytics", "Кластеризовать темы и рассчитать метрики", "system"),
     ("export", "Экспортировать отчёт", "employee"),
     ("document", "Сформировать документ", "system"),
-    ("review", "Провести анализ документа", "management"),
-    ("weight", "Оценить репутационный вес", "management"),
-    ("react", "Отреагировать", "management"),
 ]
 
 

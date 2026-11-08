@@ -1,4 +1,4 @@
-"""Страницы системы. Дорожки BPMN: сотрудник — новый отчёт, руководство — раздел проверки."""
+"""Страницы системы: дорожка «Сотрудник» BPMN TO-BE, база публикаций и справочники."""
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -19,14 +19,12 @@ from app.export.service import export_report
 from app.models import (
     CollectionRun,
     Mention,
-    MentionReview,
     MonitoringObject,
     Publication,
     Report,
     ReportDocument,
     ReportPublication,
     Source,
-    utcnow,
 )
 from app.nlp.ner import ENTITY_LABELS
 from app.nlp.topics import TOPIC_NAMES
@@ -41,8 +39,7 @@ DEFAULT_PERIOD_DAYS = 90
 STATUS_LABELS = {
     "processing": "Обрабатывается",
     "ready": "Готов к экспорту",
-    "exported": "Ждёт анализа руководства",
-    "closed": "Процесс завершён",
+    "exported": "Экспортирован",
     "failed": "Ошибка",
 }
 
@@ -189,7 +186,7 @@ def report_page(request: Request, report_id: int):
 def export_action(report_id: int):
     with reports_session() as session:
         report = _get_report(session, report_id)
-        if report.status not in {"ready", "exported", "closed"}:
+        if report.status not in {"ready", "exported"}:
             raise HTTPException(409, "Отчёт ещё обрабатывается")
     export_report(report_id)
     return RedirectResponse(f"/reports/{report_id}#documents", status_code=303)
@@ -207,78 +204,6 @@ def download_document(report_id: int, document_id: int, inline: bool = False):
             media_type=document.mime,
             headers={"Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(document.filename)}"},
         )
-
-
-# ------------------------------------------------------------------ руководство
-
-
-@router.get("/review", response_class=HTMLResponse)
-def review_queue(request: Request):
-    with reports_session() as session:
-        waiting = session.scalars(select(Report).where(Report.status == "exported").order_by(Report.exported_at.desc())).all()
-        closed = session.scalars(select(Report).where(Report.status == "closed").order_by(Report.closed_at.desc())).all()
-        return _render(request, "review_queue.html", active="review", waiting=waiting, closed=closed)
-
-
-@router.get("/reports/{report_id}/review", response_class=HTMLResponse)
-def review_page(request: Request, report_id: int):
-    with reports_session() as session:
-        report = _get_report(session, report_id)
-        if report.status not in {"exported", "closed"}:
-            return RedirectResponse(f"/reports/{report_id}", status_code=303)
-        negative = session.scalars(
-            select(ReportPublication)
-            .options(joinedload(ReportPublication.review))
-            .where(
-                ReportPublication.report_id == report_id,
-                ReportPublication.status == "relevant",
-                ReportPublication.sentiment == "negative",
-            )
-            .order_by(ReportPublication.reputation_weight.desc())
-        ).all()
-        return _render(
-            request, "review.html", active="review", report=report, negative=negative, documents=list(report.documents)
-        )
-
-
-@router.post("/reports/{report_id}/review")
-async def save_review(request: Request, report_id: int):
-    form = await request.form()
-    with reports_session() as session:
-        report = _get_report(session, report_id)
-        if report.status != "exported":
-            raise HTTPException(409, "Отчёт не ожидает анализа руководства")
-        negative = session.scalars(
-            select(ReportPublication).where(
-                ReportPublication.report_id == report_id,
-                ReportPublication.status == "relevant",
-                ReportPublication.sentiment == "negative",
-            )
-        ).all()
-
-        reacted = 0
-        for item in negative:
-            weight = max(0, min(100, int(form.get(f"weight_{item.id}", item.reputation_weight))))
-            influential = form.get(f"influential_{item.id}") == "yes"
-            reaction = str(form.get(f"reaction_{item.id}", "")).strip() if influential else ""
-            session.add(
-                MentionReview(report_publication_id=item.id, weight=weight, is_influential=influential, reaction=reaction)
-            )
-            reacted += 1 if reaction else 0
-
-        influential_count = sum(1 for item in negative if form.get(f"influential_{item.id}") == "yes")
-        report.review_summary = str(form.get("summary", "")).strip()
-        report.status = "closed"
-        report.closed_at = utcnow()
-        mark_step(report, "review", "done", "Документ проанализирован")
-        if negative:
-            mark_step(report, "weight", "done", f"Оценено упоминаний: {len(negative)}, влиятельных: {influential_count}")
-            mark_step(report, "react", "done" if influential_count else "skipped",
-                      f"Реакций: {reacted}" if influential_count else "Влиятельных упоминаний нет")
-        else:
-            mark_step(report, "weight", "skipped", "Негативных упоминаний нет")
-            mark_step(report, "react", "skipped", "Негативных упоминаний нет")
-    return RedirectResponse(f"/reports/{report_id}/review", status_code=303)
 
 
 # ------------------------------------------------------------------ база публикаций
@@ -437,8 +362,3 @@ def edit_object(
         session.execute(delete(Mention).where(Mention.object_id == object_id))
         index_object_mentions(session, item)
     return RedirectResponse("/objects", status_code=303)
-
-
-@router.get("/method", response_class=HTMLResponse)
-def method_page(request: Request):
-    return _render(request, "method.html", active="method")

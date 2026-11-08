@@ -39,14 +39,4 @@
       }
     });
   });
-
-  // Поле реакции нужно только для влиятельных упоминаний.
-  document.querySelectorAll("[data-mention]").forEach((mention) => {
-    const reaction = mention.querySelector("[data-reaction]");
-    mention.querySelectorAll('input[type="radio"]').forEach((radio) => {
-      radio.addEventListener("change", () => {
-        reaction.hidden = !(radio.checked && radio.value === "yes");
-      });
-    });
-  });
 })();

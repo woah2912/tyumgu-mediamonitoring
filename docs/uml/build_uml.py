@@ -69,6 +69,13 @@ class Canvas:
                  (x + ux * size / 2 - px * half, y + uy * size / 2 - py * half)]
         self.axis.add_patch(Polygon(shape, closed=True, facecolor=LINE if filled else "white", edgecolor=LINE, linewidth=1.1, zorder=4))
 
+    def crop_bottom(self, y):
+        """Отрезает пустую полосу снизу, сохраняя масштаб."""
+        bottom, top = self.axis.get_ylim()
+        width, height = self.figure.get_size_inches()
+        self.axis.set_ylim(y, top)
+        self.figure.set_size_inches(width, height * (top - y) / (top - bottom))
+
     def save(self, name):
         self.figure.savefig(OUTPUT / f"{name}.png", dpi=150, facecolor="white", bbox_inches="tight", pad_inches=0.15)
         self.figure.savefig(OUTPUT / f"{name}.svg", facecolor="white", bbox_inches="tight", pad_inches=0.15)
@@ -112,14 +119,13 @@ def association(c: Canvas, point, case):
 
 def use_cases() -> None:
     c = Canvas(1560, 1170, "Система медиамониторинга ТюмГУ", "UML: диаграмма прецедентов")
-    c.axis.add_patch(Rectangle((300, 40), 990, 1050, facecolor="none", edgecolor=BOUNDARY, linewidth=1.3, zorder=1))
+    c.axis.add_patch(Rectangle((300, 270), 990, 820, facecolor="none", edgecolor=BOUNDARY, linewidth=1.3, zorder=1))
     c.text(795, 1078, "Система медиамониторинга ТюмГУ", size=11, ha="center", va="top", fontweight="bold")
 
     actor(c, 140, 820, "Сотрудник УСК")
-    actor(c, 140, 470, "Руководство УСК")
-    actor(c, 140, 160, "Администратор")
-    actor(c, 1430, 320, "Планировщик\n(таймер)")
-    actor(c, 1430, 120, "Источник СМИ\n(RSS, сайт)")
+    actor(c, 140, 390, "Администратор")
+    actor(c, 1430, 550, "Планировщик\n(таймер)")
+    actor(c, 1430, 350, "Источник СМИ\n(RSS, сайт)")
 
     report = use_case(c, 540, 920, "Сформировать отчёт")
     custom = use_case(c, 540, 995, "Добавить свой источник", 240)
@@ -131,25 +137,20 @@ def use_cases() -> None:
     document = use_case(c, 950, 745, "Сформировать документ DOCX, PDF, XLSX")
     archive = use_case(c, 540, 665, "Просмотреть архив отчётов")
 
-    review = use_case(c, 540, 520, "Проанализировать отчёт")
-    weight = use_case(c, 950, 560, "Оценить репутационный вес упоминания")
-    react = use_case(c, 950, 480, "Зафиксировать реакцию на влиятельное упоминание")
-
-    manage = use_case(c, 540, 330, "Управлять источниками и объектами мониторинга")
-    journal = use_case(c, 540, 250, "Просмотреть журнал отладки сбора")
-    inspect = use_case(c, 540, 170, "Проверить адрес источника")
-    database = use_case(c, 540, 90, "Просмотреть базы данных")
-    collect = use_case(c, 950, 300, "Собрать публикации")
-    markup = use_case(c, 950, 110, "Определить тему, сущности и тональность")
+    manage = use_case(c, 540, 560, "Управлять источниками и объектами мониторинга")
+    journal = use_case(c, 540, 480, "Просмотреть журнал отладки сбора")
+    inspect = use_case(c, 540, 400, "Проверить адрес источника")
+    database = use_case(c, 540, 320, "Просмотреть базы данных")
+    collect = use_case(c, 950, 530, "Собрать публикации")
+    markup = use_case(c, 950, 340, "Определить тему, сущности и тональность")
 
     for case in (report, export, archive):
         association(c, (165, 850), case)
-    association(c, (165, 500), review)
     for case in (manage, journal, inspect, database):
-        association(c, (165, 190), case)
-    association(c, (1405, 350), collect)
-    association(c, (1405, 150), collect)
-    association(c, (1405, 140), inspect)
+        association(c, (165, 420), case)
+    association(c, (1405, 580), collect)
+    association(c, (1405, 380), collect)
+    association(c, (1405, 370), inspect)
 
     relation(c, report, query, "include")
     relation(c, report, analysis, "include")
@@ -157,9 +158,8 @@ def use_cases() -> None:
     relation(c, custom, report, "extend")
     relation(c, no_data, report, "extend")
     relation(c, export, document, "include")
-    relation(c, weight, review, "extend")
-    relation(c, react, review, "extend")
     relation(c, collect, markup, "include")
+    c.crop_bottom(250)
     c.save("uml-1-usecase")
 
 
@@ -232,7 +232,7 @@ def sequence_report() -> None:
         "nlp": (1150, "NLP-модули", False),
         "repdb": (1380, "База отчётов", False),
         "export": (1610, "Формирование документов", False),
-    }, top=1420, bottom=40)
+    }, top=1420, bottom=110)
 
     y = 1290
     s.message("user", "web", y, "Выбрать объект, контекст, период, источники")
@@ -273,9 +273,8 @@ def sequence_report() -> None:
     s.message("export", "repdb", y - 1030, "сохранить DOCX, PDF, XLSX")
     s.message("export", "pages", y - 1063, "готово", kind="reply")
     s.message("pages", "web", y - 1100, "ссылки на документы", kind="reply")
-    s.message("user", "web", y - 1145, "Открыть раздел «Анализ отчётов» (руководство)")
-    s.message("web", "pages", y - 1185, "POST /reports/{id}/review: вес, влиятельность, реакция")
-    s.message("pages", "repdb", y - 1225, "сохранить решения, закрыть процесс")
+    s.message("user", "web", y - 1145, "Скачать документ и передать руководству")
+    c.crop_bottom(90)
     c.save("uml-2-sequence-report")
 
 
@@ -399,7 +398,7 @@ def class_data_model() -> None:
     report = class_box(c, 1210, 1180, 360, "Report", [
         "+id: int", "+object_id: int", "+object_name: str", "+context_name: str", "+date_from: datetime",
         "+date_to: datetime", "+status: str", "+steps: list", "+metrics: dict", "+clusters: list",
-        "+review_summary: str",
+        "+exported_at: datetime [0..1]",
     ])
     document = class_box(c, 1640, 1180, 360, "ReportDocument", [
         "+format: str", "+filename: str", "+mime: str", "+size: int", "+content: bytes", "+created_at: datetime",
@@ -410,7 +409,6 @@ def class_data_model() -> None:
         "+relevance_score: float", "+removal_reason: str", "+reprints: int", "+cluster: int [0..1]",
         "+reputation_weight: int",
     ])
-    review = class_box(c, 1640, 700, 360, "MentionReview", ["+weight: int", "+is_influential: bool", "+reaction: str"])
 
     # Source 1 — 0..* Publication
     c.line([(source["cx"], source["bottom"]), (source["cx"], publication["top"])])
@@ -443,11 +441,6 @@ def class_data_model() -> None:
     c.line([(report["cx"], report["bottom"]), (report["cx"], snapshot["top"])])
     c.diamond((report["cx"], report["bottom"]), (report["cx"], snapshot["top"]))
     multiplicity(c, (report["cx"], snapshot["top"]), "1..*", dy=12)
-    # ReportPublication ◆— 0..1 MentionReview
-    left, right = (snapshot["right"], review["top"] - 40), (review["left"], review["top"] - 40)
-    c.line([left, right])
-    c.diamond(left, right)
-    multiplicity(c, right, "0..1", dx=-8, dy=10)
 
     # Снимок публикации и объект отчёта: зависимости между базами по идентификатору
     y_low = 100

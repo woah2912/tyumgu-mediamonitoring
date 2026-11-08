@@ -11,7 +11,7 @@
     </div>
     <div class="head-actions">
       <span class="status status-{{ report.status }}">{{ STATUS_LABELS[report.status] }}</span>
-      {% if report.status in ['ready', 'exported', 'closed'] %}
+      {% if report.status in ['ready', 'exported'] %}
       <form method="post" action="/reports/{{ report.id }}/export">
         <button class="button button-primary" data-busy="Формируем документ…">{{ 'Экспортировать отчёт' if report.status == 'ready' else 'Экспортировать заново' }}</button>
       </form>
@@ -202,9 +202,6 @@
       </a>
       {% endfor %}
     </div>
-    {% if report.status in ['exported', 'closed'] %}
-    <p class="after-documents"><a class="button" href="/reports/{{ report.id }}/review">Открыть анализ руководства</a></p>
-    {% endif %}
     {% else %}
     <p class="hint">Документы появятся после команды «Экспортировать отчёт».</p>
     {% endif %}

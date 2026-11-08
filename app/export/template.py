@@ -152,7 +152,7 @@ def build_blocks(report, items) -> list:
 
     blocks.append(Heading("Негативные упоминания"))
     if negative:
-        blocks.append(Paragraph("Список отсортирован по системной оценке репутационного веса. Итоговое решение принимает руководство."))
+        blocks.append(Paragraph("Список отсортирован по системной оценке репутационного веса."))
         blocks.append(
             Table(
                 ["Дата", "Источник", "Публикация", "Роль", "Вес"],
